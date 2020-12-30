@@ -59,6 +59,8 @@ var createTaskEl = function(taskDataObj) {
   	// add task id as a custom attribute
   listItemEl.setAttribute("data-task-id", taskIdCounter);
 
+  listItemEl.setAttribute("draggable", "true");
+
   var taskInfoEl = document.createElement("div");
 		taskInfoEl.className = "task-info";
 		taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskDataObj.name + "</h3><span class='task-type'>" + taskDataObj.type + "</span>";
@@ -178,8 +180,66 @@ var taskStatusChangeHandler = function(event) {
 	  }
   };
 
+// creating the drag action and also logging the dataId to console for reference
+var dragTaskHandler = function(event) {
+	var taskId = event.target.getAttribute("data-task-id");
+	event.dataTransfer.setData("text/plain", taskId);
+
+	var getId = event.dataTransfer.getData("text/plain");
+	console.log("getId:", getId, typeof getId);
+};
+
+// This function determines the information provided when you drag the item over the event target
+var dropZoneDragHandler = function(event) {
+	// searches from the element: .task-list to apply the functions
+	var taskListEl = event.target.closest(".task-list");
+	// if statement, item will bounce back to the parent element by using event.preventDefault();, and if reaches the desired element (console.dir(taskListEl)), it will console.log the event
+	if (taskListEl) {
+		event.preventDefault();
+
+	taskListEl.setAttribute("style", "background: rgba(68, 233, 255, 0.7); border-style: dashed;");
+	}
+};
+
+// function to drop the item into the new element
+var dropTaskHandler = function(event) {
+	var id = event.dataTransfer.getData("text/plain");
+		console.log("Drop Event Target:", event.target, event.dataTransfer, id);
+
+	var draggableElement = document.querySelector("[data-task-id='" + id + "']");
+		console.log(draggableElement);
+		console.dir(draggableElement);
+
+	var dropZoneEl = event.target.closest(".task-list");
+
+	var statusType = dropZoneEl.id;
+
+	var statusSelectEl = draggableElement.querySelector("select[name='status-change']");
+		if (statusType === "tasks-to-do") {
+			statusSelectEl.selectedIndex = 0;
+		} 
+		else if (statusType === "tasks-in-progress") {
+			statusSelectEl.selectedIndex = 1;
+		} 
+		else if (statusType === "tasks-completed") {
+			statusSelectEl.selectedIndex = 2;
+		}
+	
+	dropZoneEl.removeAttribute("style");	
+	dropZoneEl.appendChild(draggableElement);
+};
+
+var dragLeaveHandler = function(event) {
+	var taskListEl = event.target.closest(".task-list");
+		if (taskListEl) {
+		taskListEl.removeAttribute("style");
+		}
+};
+
 formEl.addEventListener("submit", taskFormHandler);  
-
 pageContentEl.addEventListener("click", taskButtonHandler);
-
 pageContentEl.addEventListener("change", taskStatusChangeHandler);
+pageContentEl.addEventListener("dragstart", dragTaskHandler);
+pageContentEl.addEventListener("dragover", dropZoneDragHandler);
+pageContentEl.addEventListener("drop", dropTaskHandler);
+pageContentEl.addEventListener("dragleave", dragLeaveHandler);
